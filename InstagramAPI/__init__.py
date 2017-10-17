@@ -27,7 +27,7 @@ except:
     from .ImageUtils import getImageSize
 
 from requests_toolbelt import MultipartEncoder
-from moviepy.editor import VideoFileClip
+# from moviepy.editor import VideoFileClip
 
 class InstagramAPI:
     API_URL = 'https://i.instagram.com/api/v1/'
@@ -852,6 +852,11 @@ class InstagramAPI:
 
     def getLikedMedia(self,maxid=''):
         return self.SendRequest('feed/liked/?max_id='+str(maxid))
+
+    def getUserRecentMedia(self, userName):
+        request = 'https://www.instagram.com/%s/media/?__a=1' % (userName)
+        resp = self.s.get(request)
+        return json.loads(resp.text)
 
     def generateSignature(self, data,skip_quote=False):
         if not skip_quote:
