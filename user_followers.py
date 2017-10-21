@@ -7,6 +7,7 @@ from random import randrange
 from random import shuffle
 import time
 import json
+import sys
 
 
 class BotContext(object):
@@ -23,13 +24,15 @@ class BotContext(object):
 
         self.read_config()
 
+        # sys.stdout = open('output.log', 'w')
+
     def __enter__(self):
         self.api = InstagramAPI(self.login, self.password)
         self.api.login()
         return self
 
     def __exit__(self, *args):
-        write_log("Logging out")
+        write_log(self, "Logging out")
         self.api.logout()
 
     def read_config(self):
@@ -89,7 +92,7 @@ def get_media_ids(ctx, user_name):
         for media in media_results['items']:
             media_ids_and_count += [(media['id'], media['likes']['count'])]
     except Exception as e:
-        write_log("User '%s' not found", user_name)
+        write_log(ctx, "User '%s' not found", user_name)
 
     return media_ids_and_count
 
@@ -98,17 +101,17 @@ def get_user_medias_and_like(ctx, user_name):
     media_ids_and_count = get_media_ids(ctx, user_name)
 
     if media_ids_and_count is []:
-        write_log("No media to like found for username '%s'", user_name)
+        write_log(ctx, "No media to like found for username '%s'", user_name)
         return None
     else:
         top_medias = media_ids_and_count[:ctx.max_likes_per_media]
         for media in top_medias:
             if media[1] > ctx.media_likes_limit:
-                write_log("Won't like media '%s' for username '%s' because already liked '%s' times", (media[0], user_name, media[1]))
+                write_log(ctx, "Won't like media '%s' for username '%s' because already liked '%s' times", (media[0], user_name, media[1]))
                 time.sleep(0.5)
             else:
                 ctx.api.like(media[0])
-                write_log("Liked media '%s' for username '%s'", (media[0], user_name))
+                write_log(ctx, "Liked media '%s' for username '%s'", (media[0], user_name))
                 time.sleep(calc_sleep(ctx))
         return None
 
@@ -128,7 +131,7 @@ def get_user_id(ctx, user_name):
         media_results = ctx.api.getUserRecentMedia(user_name)
         result = media_results['items'][0]['user']['id']
     except Exception as e:
-        write_log("User '%s' not found", user_name)
+        write_log(ctx, "User '%s' not found", user_name)
         result = None
     return result
 
@@ -138,12 +141,18 @@ def calc_sleep(ctx):
     return randrange(sleep - 5, sleep + 10)
 
 
-def write_log(msg, args=None):
-    now = time.strftime("%c")
+def write_log(ctx, msg, args=None):
     if args is None:
-        print now, msg
+        ctx.api.log(msg)
     else:
-        print now, msg % args
+        ctx.api.log(msg % args)
+
+# def write_log(msg, args=None):
+#     now = time.strftime("%c")
+#     if args is None:
+#         print now, msg
+#     else:
+#         print now, msg % args
 
 
 def write_user_id_next_max_list(ctx, user_id_next_max_list):
@@ -171,22 +180,22 @@ if __name__ == '__main__':
         current_time = int(time.time())
 
         while True:
-            write_log("Get user ids for users: %s", ctx.user_name_list)
+            write_log(ctx, "Get user ids for users: %s", ctx.user_name_list)
             user_id_list = get_user_ids(ctx, ctx.user_name_list)
-            write_log("User ids are: %s", user_id_list)
+            write_log(ctx, "User ids are: %s", user_id_list)
 
             user_id_next_max_list = usort_users_with_next_max(user_id_list, ctx.user_id_next_max_list)
-            write_log("User ids and next max list: %s", user_id_next_max_list)
+            write_log(ctx, "User ids and next max list: %s", user_id_next_max_list)
 
-            write_log("Get list of next followers for user ids")
+            write_log(ctx, "Get list of next followers for user ids")
             (follower_name_list, user_id_next_max_list) = get_users_followers(ctx, user_id_next_max_list)
 
             write_user_id_next_max_list(ctx, user_id_next_max_list)
 
             shuffle(follower_name_list)
-            write_log("Followers list is: %s", follower_name_list)
+            write_log(ctx, "Followers list is: %s", follower_name_list)
 
-            write_log("Start get media and like them")
+            write_log(ctx, "Start get media and like them")
             for name in follower_name_list:
                 # check config.json once per 'check_config_sec' interval
                 if int(time.time()) - current_time > ctx.check_config_sec:

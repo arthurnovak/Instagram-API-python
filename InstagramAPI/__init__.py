@@ -15,6 +15,7 @@ import sys
 from datetime import datetime
 import calendar
 import os
+import logging
 
 #The urllib library was split into other modules from Python 2 to Python 3
 if sys.version_info.major == 3:
@@ -61,6 +62,19 @@ class InstagramAPI:
         self.isLoggedIn = False
         self.LastResponse = None
 
+        # init logger
+
+        logger = logging.getLogger('likebot')
+        hdlr = logging.FileHandler('output.log')
+        formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+        hdlr.setFormatter(formatter)
+        logger.addHandler(hdlr)
+        logger.setLevel(logging.INFO)
+        self.logger = logger
+
+    def log(self, msg):
+        self.logger.info(msg)
+
     def setUser(self, username, password):
         self.username = username
         self.password = password
@@ -92,7 +106,7 @@ class InstagramAPI:
                     self.timelineFeed()
                     self.getv2Inbox()
                     self.getRecentActivity()
-                    print ("Login success!\n")
+                    self.log("Login success!\n")
                     return True;
 
     def syncFeatures(self):
@@ -385,7 +399,7 @@ class InstagramAPI:
             self.LastJson = json.loads(response.text)
             return True
         else:
-            print ("Request return " + str(response.status_code) + " error!")
+            self.log("Request return " + str(response.status_code) + " error!")
             # for debugging
             try:
                 self.LastResponse = response
@@ -471,7 +485,7 @@ class InstagramAPI:
             self.LastJson = json.loads(response.text)
             return True
         else:
-            print ("Request return " + str(response.status_code) + " error!")
+            self.log("Request return " + str(response.status_code) + " error!")
             # for debugging
             try:
                 self.LastResponse = response
@@ -928,11 +942,12 @@ class InstagramAPI:
             self.LastJson = json.loads(response.text)
             return True
         else:
-            print ("Request return " + str(response.status_code) + " error!")
+            self.log("Request return " + str(response.status_code) + " error!")
             # for debugging
             try:
                 self.LastResponse = response
                 self.LastJson = json.loads(response.text)
+                self.log("Send Request error: " + self.LastJson)
             except:
                 pass
             return False
