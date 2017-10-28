@@ -404,6 +404,7 @@ class InstagramAPI:
             try:
                 self.LastResponse = response
                 self.LastJson = json.loads(response.text)
+                self.log("LastJson: " + str(self.LastJson))
             except:
                 pass
             return False
@@ -490,6 +491,7 @@ class InstagramAPI:
             try:
                 self.LastResponse = response
                 self.LastJson = json.loads(response.text)
+                self.log("LastJson: " + str(self.LastJson))
             except:
                 pass
             return False
@@ -947,7 +949,7 @@ class InstagramAPI:
             try:
                 self.LastResponse = response
                 self.LastJson = json.loads(response.text)
-                self.log("Send Request error: " + self.LastJson)
+                self.log("Send Request LastJson: " + str(self.LastJson))
             except:
                 pass
             return False
