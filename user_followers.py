@@ -10,7 +10,8 @@ import json
 
 
 day_secs = 86400
-spam_idle_sec = 600
+ban_err_idle_sec = 2 * 60 * 60
+other_err_idle_sec = 10 * 60
 
 
 class BotContext(object):
@@ -114,14 +115,24 @@ def get_user_medias_and_like(ctx, user_name):
                 log(ctx, "Won't like media '%s' for username '%s' because already liked '%s' times", (media[0], user_name, media[1]))
                 time.sleep(0.5)
             else:
-                if ctx.api.like(media[0]):
+                resp = ctx.api.like_media_via_url(media[0])
+                status_code = resp.status_code
+                if status_code == 200:
                     new_day_likes_acc = ctx.day_likes_acc + 1
                     ctx.day_likes_acc = new_day_likes_acc
                     log(ctx, "Liked media '%s' for username '%s'", (media[0], user_name))
                     time.sleep(calc_sleep(ctx))
+                elif status_code == 400:
+                    #oops, may be banned
+                    log(ctx,
+                        "Error response code %s returned when like username '%s' media. Sleep for %s seconds now...",
+                        (status_code, user_name, ban_err_idle_sec))
+                    time.sleep(ban_err_idle_sec)
                 else:
-                    log(ctx, "Instagram returned spam error when like username '%s' media. Sleep for %s seconds now...", (user_name, spam_idle_sec))
-                    time.sleep(spam_idle_sec)
+                    log(ctx,
+                        "Error response code %s returned when like username '%s' media. Sleep for %s seconds now...",
+                        (resp.status_code, user_name, other_err_idle_sec))
+                    time.sleep(other_err_idle_sec)
         return None
 
 
@@ -212,8 +223,8 @@ if __name__ == '__main__':
                 seconds_since_day_starts = new_current_time - day_start_time
                 if seconds_since_day_starts > day_secs:
                     day_start_time = new_current_time
+                    log(ctx, "One day passed. 'day_likes_acc' is %s. Reset to 0 now", ctx.day_likes_acc)
                     ctx.day_likes_acc = 0
-                    log(ctx, "One day passed. Reset day_likes_acc to %s", ctx.day_likes_acc)
                 else:
                     if ctx.day_likes_acc > ctx.max_likes_per_day - ctx.max_likes_per_media:
                         log(ctx,

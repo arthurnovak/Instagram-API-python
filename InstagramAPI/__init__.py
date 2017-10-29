@@ -874,6 +874,10 @@ class InstagramAPI:
         resp = self.s.get(request)
         return json.loads(resp.text)
 
+    def like_media_via_url(self, media_id):
+        request = 'https://www.instagram.com/web/likes/%s/like/' % (media_id)
+        return self.s.post(request)
+
     def generateSignature(self, data,skip_quote=False):
         if not skip_quote:
             try:
