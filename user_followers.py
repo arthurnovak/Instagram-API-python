@@ -34,11 +34,15 @@ class BotContext(object):
     def __enter__(self):
         self.api = InstagramAPI(self.login, self.password)
         self.api.login()
+        time.sleep(5)
+        self.api.login2()
         return self
 
     def __exit__(self, *args):
-        log(self, "Logging out")
         self.api.logout()
+        time.sleep(3)
+        self.api.logout2()
+        log(self, "Logged out")
 
     def read_config(self):
         with open(self.config_path) as f:

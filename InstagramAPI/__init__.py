@@ -63,7 +63,6 @@ class InstagramAPI:
         self.LastResponse = None
 
         # init logger
-
         logger = logging.getLogger('likebot')
         hdlr = logging.FileHandler('output.log')
         formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
@@ -71,6 +70,11 @@ class InstagramAPI:
         logger.addHandler(hdlr)
         logger.setLevel(logging.INFO)
         self.logger = logger
+
+        # second login as instagram user
+        self.ss = ''
+        self.login2_status = False
+        self.csrftoken = ''
 
     def log(self, msg):
         self.logger.info(msg)
@@ -106,8 +110,64 @@ class InstagramAPI:
                     self.timelineFeed()
                     self.getv2Inbox()
                     self.getRecentActivity()
-                    self.log("Login success!\n")
+                    self.log("Login to Instagram API success!")
                     return True;
+
+    def login2(self):
+        self.log("Trying to login2 as '%s'" % self.username)
+        self.ss = requests.Session()
+        self.ss.cookies.update({
+            'sessionid': '',
+            'mid': '',
+            'ig_pr': '1',
+            'ig_vw': '1920',
+            'csrftoken': '',
+            's_network': '',
+            'ds_user_id': ''
+        })
+        login2_post = {
+            'username': self.username,
+            'password': self.password
+        }
+        user_agent = ("Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 "
+                      "(KHTML, like Gecko) Chrome/48.0.2564.103 Safari/537.36")
+        self.ss.headers.update({
+            'Accept-Encoding': 'gzip, deflate',
+            'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.6,en;q=0.4',
+            'Connection': 'keep-alive',
+            'Content-Length': '0',
+            'Host': 'www.instagram.com',
+            'Origin': 'https://www.instagram.com',
+            'Referer': 'https://www.instagram.com/',
+            'User-Agent': user_agent,
+            'X-Instagram-AJAX': '1',
+            'X-Requested-With': 'XMLHttpRequest'
+        })
+        r = self.ss.get('https://www.instagram.com/')
+        self.ss.headers.update({'X-CSRFToken': r.cookies['csrftoken']})
+        time.sleep(5 * random.random())
+        login = self.ss.post('https://www.instagram.com/accounts/login/ajax/',
+                             data=login2_post,
+                             allow_redirects=True)
+        self.ss.headers.update({'X-CSRFToken': login.cookies['csrftoken']})
+        self.csrftoken = login.cookies['csrftoken']
+        time.sleep(5 * random.random())
+
+        if login.status_code == 200:
+            self.login2_status = True
+            self.log("Login2 success!")
+        else:
+            self.login2_status = False
+            self.log("Login2 error: %s" % login.status_code)
+
+    def logout2(self):
+        try:
+            logout_post = {'csrfmiddlewaretoken': self.csrftoken}
+            self.ss.post('https://www.instagram.com/accounts/logout/', data=logout_post)
+            self.log("Logout2 success!")
+            self.login2_status = False
+        except:
+            self.log("Logout2 error!")
 
     def syncFeatures(self):
         data = json.dumps({
@@ -139,7 +199,7 @@ class InstagramAPI:
         return self.SendRequest('qe/expose/', self.generateSignature(data))
 
     def logout(self):
-        logout = self.SendRequest('accounts/logout/')
+        return self.SendRequest('accounts/logout/')
 
     def uploadPhoto(self, photo, caption = None, upload_id = None, is_sidecar = None):
         if upload_id is None:
@@ -870,13 +930,17 @@ class InstagramAPI:
         return self.SendRequest('feed/liked/?max_id='+str(maxid))
 
     def getUserRecentMedia(self, userName):
-        request = 'https://www.instagram.com/%s/media/?__a=1' % (userName)
+        request = 'https://www.instagram.com/%s/media/?__a=1' % userName
         resp = self.s.get(request)
         return json.loads(resp.text)
 
     def like_media_via_url(self, media_id):
-        request = 'https://www.instagram.com/web/likes/%s/like/' % (media_id)
-        return self.s.post(request)
+        if not self.login2_status:
+            self.login2()
+
+        request = 'https://www.instagram.com/web/likes/%s/like/' % str(media_id)
+        return self.ss.post(request)
+
 
     def generateSignature(self, data,skip_quote=False):
         if not skip_quote:
