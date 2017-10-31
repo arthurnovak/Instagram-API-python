@@ -929,18 +929,14 @@ class InstagramAPI:
     def getLikedMedia(self,maxid=''):
         return self.SendRequest('feed/liked/?max_id='+str(maxid))
 
-    def getUserRecentMedia(self, userName):
+    def getUserRecentMediaWoApi(self, userName):
         request = 'https://www.instagram.com/%s/media/?__a=1' % userName
-        resp = self.s.get(request)
+        resp = self.ss.get(request)
         return json.loads(resp.text)
 
-    def like_media_via_url(self, media_id):
-        if not self.login2_status:
-            self.login2()
-
+    def likeMediaWoApi(self, media_id):
         request = 'https://www.instagram.com/web/likes/%s/like/' % str(media_id)
         return self.ss.post(request)
-
 
     def generateSignature(self, data,skip_quote=False):
         if not skip_quote:

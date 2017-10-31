@@ -1,10 +1,11 @@
 {
     "check_config_sec": 300, 
-    "login": "", 
+    "last_username": "",
+    "login": "",
     "max_likes_per_day": 920, 
-    "max_likes_per_media": 3, 
+    "max_likes_per_media": 2, 
     "media_likes_limit": 500, 
-    "password": "", 
-    "user_id_next_max_list": [], 
-    "user_name_list": []
+    "password": "",
+    "user_name_list": [
+    ]
 }

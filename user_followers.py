@@ -34,14 +34,14 @@ class BotContext(object):
     def __enter__(self):
         self.api = InstagramAPI(self.login, self.password)
         self.api.login()
-        time.sleep(5)
-        self.api.login2()
+        # time.sleep(5)
+        # self.api.login2()
         return self
 
     def __exit__(self, *args):
         self.api.logout()
-        time.sleep(3)
-        self.api.logout2()
+        # time.sleep(3)
+        # self.api.logout2()
         log(self, "Logged out")
 
     def read_config(self):
@@ -97,7 +97,7 @@ def get_media_ids(ctx, user_name):
     media_ids_and_count = []
 
     try:
-        media_results = ctx.api.getUserRecentMedia(user_name)
+        media_results = ctx.api.getUserRecentMediaWoApi(user_name)
         for media in media_results['items']:
             media_ids_and_count += [(media['id'], media['likes']['count'])]
     except Exception as e:
@@ -119,7 +119,7 @@ def get_user_medias_and_like(ctx, user_name):
                 log(ctx, "Won't like media '%s' for username '%s' because already liked '%s' times", (media[0], user_name, media[1]))
                 time.sleep(0.5)
             else:
-                resp = ctx.api.like_media_via_url(media[0])
+                resp = ctx.api.likeMediaWoApi(media[0])
                 status_code = resp.status_code
                 if status_code == 200:
                     new_day_likes_acc = ctx.day_likes_acc + 1
@@ -152,7 +152,7 @@ def get_user_ids(ctx, user_names):
 
 def get_user_id(ctx, user_name):
     try:
-        media_results = ctx.api.getUserRecentMedia(user_name)
+        media_results = ctx.api.getUserRecentMediaWoApi(user_name)
         result = media_results['items'][0]['user']['id']
     except Exception as e:
         log(ctx, "User '%s' not found", user_name)
