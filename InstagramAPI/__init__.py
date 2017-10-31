@@ -929,6 +929,11 @@ class InstagramAPI:
     def getLikedMedia(self,maxid=''):
         return self.SendRequest('feed/liked/?max_id='+str(maxid))
 
+    def getUserRecentMedia(self, userName):
+        request = 'https://www.instagram.com/%s/media/?__a=1' % userName
+        resp = self.s.get(request)
+        return json.loads(resp.text)
+
     def getUserRecentMediaWoApi(self, userName):
         request = 'https://www.instagram.com/%s/media/?__a=1' % userName
         resp = self.ss.get(request)
